@@ -1,0 +1,37 @@
+---
+
+postgresql_service_name: "postgresql-{{ postgresql_version }}"
+
+# to execute initdb
+postgresql_bin_directory: "/usr/pgsql-{{postgresql_version}}/bin"
+
+backup_folder: /var/lib/Experitest/postgresql/backup
+
+postgresql_packages:
+  - "postgresql{{ postgresql_version_terse }}-server"
+  - "postgresql{{ postgresql_version_terse }}"
+  - "postgresql{{ postgresql_version_terse }}-contrib"
+  - "postgresql{{ postgresql_version_terse }}-libs"
+
+postgresql_dependencies:
+  - python-psycopg2
+  - python-pycurl
+# - glibc-common
+# - libselinux-python
+# - ca-certificates
+
+
+# update binary if mismatch
+postgresql_binary:
+  - psql
+  - pg_dump
+  - pg_dumpall
+  - pg_restore
+  - createdb
+  - dropdb
+  - createuser
+  - reindexdb
+  - vacuumdb
+
+
+# postgresql_password: "postgres!123"

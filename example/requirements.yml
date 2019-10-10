@@ -1,0 +1,4 @@
+
+- src: git+https://github.com/ExperitestOfficial/ansible-role-postgresql-server.git
+  version: master
+  name: postgresql-server
