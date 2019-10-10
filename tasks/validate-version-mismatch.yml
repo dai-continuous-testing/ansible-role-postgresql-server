@@ -1,0 +1,36 @@
+
+- name: Check binary version
+  shell: >
+    psql --version | sed 's/^psql (//' | sed 's/)//' | awk '{print $1, $2}'
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  changed_when: false
+  failed_when: postgresql_binary_version.stdout == ""
+  register: postgresql_binary_version
+  check_mode: no
+
+- name: Check database version
+  shell: >
+    psql --quiet --tuples-only --port={{ postgresql_port | int }} --command="select substring(version(),'[^\s]+\s+[^\s]+');" | sed 's/^ //'
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  changed_when: false
+  failed_when: postgresql_database_version.stdout == ""
+  register: postgresql_database_version
+  check_mode: no
+
+- name: Verify binary and database versions match
+  debug:
+    msg: "WARNING: Binary ({{ postgresql_binary_version.stdout }}) and Database ({{ postgresql_database_version.stdout }}) version mismatch. Service restart required!"
+  when: postgresql_binary_version.stdout != postgresql_database_version.stdout
+  changed_when: postgresql_binary_version.stdout != postgresql_database_version.stdout
+  notify: restart postgresql
+
+- name: Fix postgres binaries if mismatch
+  file:
+    src: "{{ postgresql_bin_directory }}/{{ item }}"
+    dest: "/etc/alternatives/pgsql-{{ item }}"
+    state: link
+    force: yes
+  when: postgresql_binary_version.stdout != postgresql_database_version.stdout
+  with_items: "{{ postgresql_binary }}"

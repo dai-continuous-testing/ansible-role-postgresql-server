@@ -1,0 +1,7 @@
+
+- hosts: postgresql-servers
+
+  roles:
+    - role: postgresql-server
+      postgresql_password: mysupersecurepassword
+      postgresql_version: 11

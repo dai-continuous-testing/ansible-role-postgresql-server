@@ -1,0 +1,78 @@
+
+# validation
+
+- name: assert all vars are set
+  assert: { that: "{{ item }} != '' " }
+  with_items:
+  - postgresql_service_name
+  - postgresql_install_directory
+  - backup_folder
+  - postgresql_user
+  - postgresql_packages
+
+# uninstall
+
+- name: gather installed services
+  service_facts:
+
+- name: perform backup before uninstall
+  block:
+
+    - name: make sure postgresql is up and running
+      service:
+        name: "{{ postgresql_service_name }}"
+        state: started
+      when: "postgresql_service_name in services"
+      become: yes
+    
+    - name: make sure backup folder exists
+      file:
+        path: "{{ backup_folder }}"
+        state: directory
+        owner: "{{ postgresql_user }}"
+      become: yes
+      
+    - name: run database backup
+      shell: "pg_dumpall > {{ backup_folder }}/{{ ansible_date_time.epoch }}-alldatabases.dump"
+      become: yes
+      become_user: "{{ postgresql_user }}"
+      args:
+        executable: /bin/bash
+
+  when: backup_before_uninstall == True
+
+
+- name: stop postgresql
+  service:
+    name: "{{ postgresql_service_name }}"
+    state: stopped
+    enabled: no
+  when: "postgresql_service_name in services"
+  become: yes
+
+- name: uninstall postgresql
+  yum:
+    name: "{{ postgresql_packages }}"
+    state: absent
+  become: yes
+
+- name: Remove PostgreSQL repository (and clean up left-over metadata)
+  yum_repository:
+    name: postgresql
+    state: absent
+  register: remove_postgres_repo
+  become: yes
+  
+- name: yum-clean-metadata
+  command: yum clean metadata
+  args:
+    warn: no
+  when: remove_postgres_repo.changed
+  become: yes
+
+- name: remove the postgresql install directory
+  file:
+    path: "{{ postgresql_install_directory }}"
+    state: absent
+  become: yes
+  
