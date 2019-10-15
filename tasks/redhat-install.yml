@@ -89,16 +89,17 @@
     group: "{{ postgresql_group }}"
     state: directory
     mode: 0700
+  become: yes
 
 - name: Check whether the postgres data directory is initialized
   stat:
     path: "{{ postgresql_data_directory }}/PG_VERSION"
   register: pgdata_dir_initialized
+  become: yes
 
 - name: Initialize the database
-  command: "{{ postgresql_bin_directory }}/initdb -D {{ postgresql_data_directory }}"
+  command: "{{ postgresql_bin_directory }}/postgresql-{{ postgresql_version }}-setup initdb"
   become: yes
-  become_user: "{{ postgresql_user }}"
   when: not pgdata_dir_initialized.stat.exists
 
 # configure installed 
@@ -109,7 +110,8 @@
     dest: "{{ postgresql_data_directory }}/pg_hba.conf"
     owner: "{{ postgresql_user }}"
     group: "{{ postgresql_group }}"
-    mode: 0640
+    mode: 0644
+  become: yes
   register: postgresql_configuration_1
 
 - name: uncomment postgresql properties
@@ -144,6 +146,7 @@
 - name: check old posgtres services
   shell: "systemctl list-unit-files --type=service | grep postgresql | grep -v {{ postgresql_service_name }} | awk '{print $1}'"
   register: old_services
+  become: yes
   changed_when: no
 
 - name: stop old postgresql services
