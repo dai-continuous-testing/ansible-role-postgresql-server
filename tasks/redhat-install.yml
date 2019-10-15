@@ -89,6 +89,7 @@
     group: "{{ postgresql_group }}"
     state: directory
     mode: 0700
+  become: yes
 
 - name: Check whether the postgres data directory is initialized
   stat:
@@ -97,8 +98,6 @@
 
 - name: Initialize the database
   command: "{{ postgresql_bin_directory }}/initdb -D {{ postgresql_data_directory }}"
-  become: yes
-  become_user: "{{ postgresql_user }}"
   when: not pgdata_dir_initialized.stat.exists
 
 # configure installed 
