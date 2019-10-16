@@ -98,8 +98,9 @@
   become: yes
 
 - name: Initialize the database
-  command: "{{ postgresql_bin_directory }}/postgresql-{{ postgresql_version }}-setup initdb"
+  command: "{{ postgresql_bin_directory }}/initdb -D {{ postgresql_data_directory }}"
   become: yes
+  become_user: "{{ postgresql_user }}"
   when: not pgdata_dir_initialized.stat.exists
 
 # configure installed 
