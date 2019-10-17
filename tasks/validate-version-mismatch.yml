@@ -32,5 +32,6 @@
     dest: "/etc/alternatives/pgsql-{{ item }}"
     state: link
     force: yes
+  become: yes
   when: postgresql_binary_version.stdout != postgresql_database_version.stdout
   with_items: "{{ postgresql_binary }}"
