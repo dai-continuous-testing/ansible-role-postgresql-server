@@ -54,12 +54,14 @@
   yum:
     name: "{{ postgresql_packages }}"
     state: absent
+    lock_timeout: 180
   become: yes
 
 - name: Remove PostgreSQL repository (and clean up left-over metadata)
   yum_repository:
     name: postgresql
     state: absent
+    lock_timeout: 180
   register: remove_postgres_repo
   become: yes
   

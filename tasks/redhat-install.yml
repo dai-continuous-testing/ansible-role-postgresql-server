@@ -24,6 +24,7 @@
   yum:
     name: epel-release
     state: present
+    lock_timeout: 180
   become: yes
 
 - name: Add PostgreSQL repository
@@ -53,6 +54,7 @@
   yum:
    name: "{{ postgresql_dependencies }}"
    state: present
+   lock_timeout: 180
   become: yes
 
 # disable selinux and firewalld
@@ -78,6 +80,7 @@
   yum:
     name: "{{ postgresql_packages }}"
     state: present
+    lock_timeout: 180
   become: yes
 
 # initialize postgres server
