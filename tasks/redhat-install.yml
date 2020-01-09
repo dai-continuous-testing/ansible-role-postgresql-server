@@ -201,3 +201,4 @@
       postgresql_user: "{{ postgresql_user }}"
       postgresql_password: "{{ postgresql_password }}"
       postgresql_port: "{{ postgresql_port }}"
+      postgresql_service_name: "{{ postgresql_service_name }}"
