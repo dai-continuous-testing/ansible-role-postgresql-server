@@ -6,6 +6,7 @@ postgresql_version_terse: "{{ postgresql_version | replace('.', '') }}"  # Short
 postgresql_port: 5432
 postgresql_listen_addresses:
   - "*"
+postgresql_max_connections: 1000
 
 # pg_hba.conf
 postgresql_pg_hba_conf:
@@ -23,6 +24,7 @@ postgresql_pid_directory: "/var/run/postgresql"
 base_postgresql_conf:
   - "listen_addresses": "'{{ postgresql_listen_addresses | join(',') }}'"
   - "port": "{{ postgresql_port }}"
+  - "max_connections": "{{ postgresql_max_connections }}"
 
 extra_postgresql_conf: {}
 
