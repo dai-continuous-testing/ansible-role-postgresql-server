@@ -1,6 +1,6 @@
 
 # Basic settings
-postgresql_version: 11
+postgresql_version: 14
 postgresql_version_terse: "{{ postgresql_version | replace('.', '') }}"  # Short version of the postgresql_version, used in some path and filenames
 
 postgresql_port: 5432
