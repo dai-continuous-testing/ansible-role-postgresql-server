@@ -1,0 +1,22 @@
+
+---
+
+postgresql_service_name: "postgresql"
+postgresql_bin_directory: "/usr/bin"
+backup_folder: /var/lib/Experitest/postgresql/backup
+postgresql_packages:
+  - "postgresql-{{ postgresql_version }}"
+  - "postgresql-contrib-{{ postgresql_version }}"
+postgresql_dependencies:
+  - python3-psycopg2
+postgresql_binary:
+  - psql
+  - pg_dump
+  - pg_dumpall
+  - pg_restore
+  - createdb
+  - dropdb
+  - createuser
+  - reindexdb
+  - vacuumdb
+#postgresql_password: "postgres!123"
