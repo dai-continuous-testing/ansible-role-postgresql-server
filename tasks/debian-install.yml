@@ -1,0 +1,224 @@
+
+---
+
+# Step 1: Validation of Variables
+- name: assert all vars are set
+  assert: { that: "{{ item }} != '' " }
+  with_items:
+  - postgresql_version
+  - postgresql_port
+  - postgresql_user
+  - postgresql_password
+  - postgresql_group
+  - postgresql_service_name
+  - postgresql_packages
+  - postgresql_data_directory
+  - postgresql_bin_directory
+  - postgresql_conf
+  - postgresql_dependencies
+  - postgresql_service_name
+
+# Step 2: Add PostgreSQL repository
+- name: Add PostgreSQL APT repository
+  apt_repository:
+    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+    state: present
+  become: yes
+
+# Step 3: Update APT cache
+- name: Update APT cache
+  apt:
+    update_cache: yes
+  become: yes
+
+# Step 4: Install PostgreSQL dependencies
+- name: Install PostgreSQL dependencies
+  apt:
+    name: "{{ postgresql_dependencies }}"
+    state: present
+  become: yes
+
+# Step 5: Install PostgreSQL
+- name: Install PostgreSQL
+  apt:
+    name: "{{ postgresql_packages }}"
+    state: present
+  become: yes
+
+# Step 6: Initialize PostgreSQL Server
+- name: Make sure the postgres data directory exists
+  file:
+    path: "{{ postgresql_data_directory }}"
+    state: directory
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    mode: 0700
+  become: yes
+
+- name: Check if PostgreSQL data directory is initialized
+  stat:
+    path: "{{ postgresql_data_directory }}/PG_VERSION"
+  register: pgdata_dir_initialized
+  become: yes
+  
+- name: Ensure directory /home/{{ postgresql_user }}/.ansible/tmp exists
+  file:
+    path: "/home/{{ postgresql_user }}/.ansible/tmp"
+    state: directory
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_user }}"
+    mode: '0755'
+  become: yes
+
+- name: Use shell to find PostgreSQL data directory
+  shell: find /var/lib/pgsql -type d -name data
+  register: shell_find_data_dir
+  become: yes
+
+- debug:
+    var: shell_find_data_dir.stdout_lines
+
+- name: Assert data directory is found using shell command
+  assert:
+    that:
+      - shell_find_data_dir.stdout != ""
+    fail_msg: "PostgreSQL data directory not found!"
+
+- name: Initialize the PostgreSQL database using inline shell script
+  shell: |
+    set -e # Exit on error
+    # Fetch current permissions
+    original_permissions=$(stat -c "%a" /var/tmp)
+    echo "Original Permissions: $original_permissions"
+
+    # Change permissions on /var/tmp
+    chmod 1777 /var/tmp
+
+    # Make sure we always revert permissions, even if something fails
+    trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
+
+    # Initialize the PostgreSQL database as postgres user
+    INITDB_PATH="/usr/lib/postgresql/14/bin/initdb"
+    DATA_DIR="{{ shell_find_data_dir.stdout }}"
+    sudo -u postgres $INITDB_PATH -D $DATA_DIR
+  become: yes
+
+
+
+
+
+- name: copy pg_hba.conf template
+  template:
+    src: pg_hba.conf.j2
+    dest: "{{ postgresql_data_directory }}/pg_hba.conf"
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    mode: 0644
+  become: yes
+  register: postgresql_configuration_1
+
+- name: uncomment postgresql properties
+  replace:
+    path: "{{ postgresql_data_directory }}/postgresql.conf"
+    regexp: "^#({{ item.key }})"
+    replace: '\1'
+  with_dict: "{{ postgresql_conf }}"
+  become: yes
+
+- name: update postgresql.conf file
+  lineinfile:
+    path: "{{ postgresql_data_directory }}/postgresql.conf"
+    line: "{{ item.key }} = {{ item.value }}"
+    regexp: "^{{ item.key | replace('.', '\\.') }} ="
+  with_dict: "{{ postgresql_conf }}"
+  become: yes
+  register: postgresql_configuration_2
+
+- name: Ensure the pid directory for PostgreSQL exists
+  file:
+    name: "{{ postgresql_pid_directory }}"
+    state: directory
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    mode: u=rwX,g=rwXs,o=rx
+  become: yes
+  notify: restart postgresql
+
+# Step 8: Stop older PostgreSQL services
+
+- name: check old posgtres services
+  shell: "systemctl list-unit-files --type=service | grep postgresql | grep -v {{ postgresql_service_name }} | awk '{print $1}'"
+  register: old_services
+  become: yes
+  changed_when: no
+
+- name: stop old postgresql services
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items: "{{ old_services.stdout_lines }}"
+  become: yes
+  when: old_services.stdout_lines | length > 0
+
+# Step 9: Reload PostgreSQL Configuration
+
+- name: Reload all conf files
+  service:
+    name: "{{ postgresql_service_name }}"
+    state: reloaded
+  become: yes
+  when: postgresql_configuration_1.changed or postgresql_configuration_2.changed
+
+# Step 10: Update PostgreSQL Password
+
+- name: Ensure PostgreSQL is started and enabled on boot.
+  service:
+    name: "{{ postgresql_service_name }}"
+    state: "started"
+    enabled: yes
+  become: yes
+
+#- name: Update the password of the postgres user
+#  command: psql -U postgres -d postgres -c "alter user postgres with password '{{ postgresql_password }}';"
+#  become: yes
+#  become_user: "{{ postgresql_user }}"
+#  changed_when: no
+#  become: yes
+
+- name: Update the password of the postgres user using inline shell script
+  shell: |
+    set -e # Exit on error
+
+    # Fetch current permissions
+    original_permissions=$(stat -c "%a" /var/tmp)
+    echo "Original Permissions: $original_permissions"
+
+    # Change permissions on /var/tmp
+    chmod 1777 /var/tmp
+
+    # Make sure we always revert permissions, even if something fails
+    trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
+
+    # Update the password of the postgres user
+    sudo -u postgres psql -d postgres -c "alter user postgres with password '{{ postgresql_password }}';"
+  become: yes
+  changed_when: no
+
+
+# Step 11: Expose Role Output
+
+- name: sanitize role name
+  set_fact:
+    sanitize_role_name: "{{ role_name | replace('-', '_') | regex_replace('([^A-Za-z0-9_])', '') | trim }}"
+
+- name: expose role output
+  set_fact:
+    "{{ sanitize_role_name }}":
+      postgresql_version: "{{ postgresql_version }}"
+      postgresql_host: "{{ ansible_default_ipv4.address }}"
+      postgresql_user: "{{ postgresql_user }}"
+      postgresql_password: "{{ postgresql_password }}"
+      postgresql_port: "{{ postgresql_port }}"
+      postgresql_service_name: "{{ postgresql_service_name }}"
+  become: yes
