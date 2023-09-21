@@ -1,0 +1,89 @@
+
+---
+
+# Step 1: Validation of Variables
+- name: assert all vars are set
+  assert: { that: "{{ item }} != '' " }
+  with_items:
+  - postgresql_service_name
+  - postgresql_install_directory
+  - backup_folder
+  - postgresql_user
+  - postgresql_packages
+  - ansible_distribution_release
+
+# Step 2: Gather Installed Services
+- name: Check if PostgreSQL service is running
+  shell: systemctl is-active {{ postgresql_service_name }}
+  register: postgres_service_status
+  failed_when: postgres_service_status.rc != 0 and 'inactive' not in postgres_service_status.stdout
+  changed_when: false
+
+- set_fact:
+    is_postgres_running: "{{ postgres_service_status.stdout == 'active' }}"
+
+
+# Step 3: Backup Before Uninstall
+- name: perform backup before uninstall
+  block:
+
+    - name: make sure postgresql is up and running
+      service:
+        name: "{{ postgresql_service_name }}"
+        state: started
+      when: is_postgres_running == True
+      become: yes
+
+    - name: make sure backup folder exists
+      file:
+        path: "{{ backup_folder }}"
+        state: directory
+        owner: "{{ postgresql_user }}"
+      become: yes
+
+    - name: run database backup with adjusted /var/tmp permissions
+      shell: |
+        set -e # Exit on error
+        # Fetch current permissions
+        original_permissions=$(stat -c "%a" /var/tmp)
+        echo "Original Permissions: $original_permissions"
+        # Change permissions on /var/tmp
+        chmod 1777 /var/tmp
+        # Make sure we always revert permissions, even if something fails
+        trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
+        # Run the backup as postgres user
+        sudo -u "{{ postgresql_user }}" pg_dumpall > {{ backup_folder }}/{{ ansible_date_time.epoch }}-alldatabases.dump
+      become: yes
+
+  when: backup_before_uninstall == True
+
+
+# Step 4: Stop PostgreSQL Service
+- name: stop postgresql
+  service:
+    name: "{{ postgresql_service_name }}"
+    state: stopped
+    enabled: no
+  when: is_postgres_running == True
+  become: yes
+
+# Step 5: Uninstall PostgreSQL
+- name: uninstall postgresql
+  apt:
+    name: "{{ postgresql_packages }}"
+    state: absent
+  become: yes
+
+# Step 6: Remove PostgreSQL Repository
+- name: Remove PostgreSQL APT repository
+  apt_repository:
+    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+    state: absent
+  become: yes
+
+# Step 7: Remove PostgreSQL Installation Directory
+- name: remove the postgresql install directory
+  file:
+    path: "{{ postgresql_install_directory }}"
+    state: absent
+  become: yes

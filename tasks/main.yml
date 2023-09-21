@@ -1,21 +1,24 @@
 
-- name: fail if os family is not redhat
-  fail: 
-    msg: Current role does not support on {{ ansible_os_family | lower }}, It only supports CentOS/RedHat hosts.
-  when: (ansible_os_family | lower) != "redhat"
+- name: fail if os family is not redhat or debian
+  fail:
+    msg: Current role does not support on {{ ansible_os_family | lower }}, It only supports CentOS/RedHat and Debian hosts.
+  when: (ansible_os_family | lower) not in ['redhat', 'debian']
 
 - name: gather os specific variables
-  include_vars: 
+  include_vars:
     file: "{{ ansible_os_family | lower }}.yml"
+  become: yes
 
 - name: install
-  include_tasks: "tasks/{{ ansible_os_family | lower }}-install.yml"
+  #include_tasks: "tasks/{{ ansible_os_family | lower }}-install.yml"
+  include_tasks: "{{ ansible_os_family | lower }}-install.yml"
   when: state|default('present') == 'present'
 
 - name: validate version
   include_tasks: "tasks/validate-version-mismatch.yml"
-  when: state|default('present') == 'present' and validate_version_mismatch == True 
+  when: state|default('present') == 'present' and validate_version_mismatch == True
 
 - name: uninstall
-  include_tasks: "tasks/{{ ansible_os_family | lower }}-uninstall.yml"
+  #include_tasks: "tasks/{{ ansible_os_family | lower }}-uninstall.yml"
+  include_tasks: "{{ ansible_os_family | lower }}-uninstall.yml"
   when: state|default('present') == 'absent'
