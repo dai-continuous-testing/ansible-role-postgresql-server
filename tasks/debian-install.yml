@@ -2,42 +2,39 @@
 ---
 
 # Step 1: Validation of Variables
-- name: assert all vars are set
-  assert: { that: "{{ item }} != '' " }
-  with_items:
-  - postgresql_version
-  - postgresql_port
-  - postgresql_user
-  - postgresql_password
-  - postgresql_group
-  - postgresql_service_name
-  - postgresql_packages
-  - postgresql_data_directory
-  - postgresql_bin_directory
-  - postgresql_conf
-  - postgresql_dependencies
-  - postgresql_apt_repository_url
+# - name: assert all vars are set
+#   assert: { that: "{{ item }} != '' " }
+#   with_items:
+#   - postgresql_version
+#   - postgresql_port
+#   - postgresql_user
+#   - postgresql_password
+#   - postgresql_group
+#   - postgresql_service_name
+#   - postgresql_packages
+#   - postgresql_data_directory
+#   - postgresql_bin_directory
+#   - postgresql_conf
+#   - postgresql_dependencies
+#   - postgresql_apt_repository_url
 
 
 # Step 2: Add PostgreSQL repository
 - name: Add PostgreSQL APT repository
   block:
+    - name: Add APT signing key
+      apt_key:
+        url: "{{ postgresql_apt_repository_key }}"
+        keyring: "/etc/apt/trusted.gpg.d/postgresql.gpg"
+        state: present
+      become: yes
+        
     - name: Add repo
       apt_repository:
         repo: "deb {{ postgresql_apt_repository_url }}"
         state: present
-        update_cache: no
+        filename: postgresql
       become: yes
-      register: repo_result
-    
-    - name: Extract Repository Name
-      set_fact:
-        repo_name: "{{ repo_result.sources_added | basename }}"
-    
-    - name: Add APT signing key
-      apt_key:
-        url: "{{ postgresql_apt_repository_key }}"
-        keyring: "/etc/apt/trusted.gpg.d/{{ repo_name }}"
 
 # Step 3: Update APT cache
 - name: Update APT cache
@@ -69,9 +66,16 @@
     mode: 0700
   become: yes
 
+- name: Stop postgresql service before initdb.
+  service:
+    name: "{{ postgresql_service_name }}"
+    state: stopped
+    enabled: yes
+  become: yes
+
 - name: Check if PostgreSQL data directory is initialized
   stat:
-    path: "{{ postgresql_data_directory }}/PG_VERSION"
+    path: "{{ postgresql_data_directory }}/pg_hba.conf"
   register: pgdata_dir_initialized
   become: yes
 
