@@ -5,6 +5,9 @@ postgresql_service_name: "postgresql"
 postgresql_bin_directory: "/usr/lib/postgresql/{{ postgresql_version }}/bin"
 backup_folder: /var/lib/Experitest/postgresql/backup
 
+postgresql_conf_file: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+
+
 postgresql_packages:
   - "postgresql-{{ postgresql_version }}"
   - "postgresql-contrib-{{ postgresql_version }}"

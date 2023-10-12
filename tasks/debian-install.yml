@@ -57,33 +57,33 @@
   become: yes
 
 # Step 6: Initialize PostgreSQL Server
-- name: Make sure the postgres data directory exists
-  file:
-    path: "{{ postgresql_data_directory }}"
-    state: directory
-    owner: "{{ postgresql_user }}"
-    group: "{{ postgresql_group }}"
-    mode: 0700
-  become: yes
+# - name: Make sure the postgres data directory exists
+#   file:
+#     path: "{{ postgresql_data_directory }}"
+#     state: directory
+#     owner: "{{ postgresql_user }}"
+#     group: "{{ postgresql_group }}"
+#     mode: 0700
+#   become: yes
 
-- name: Stop postgresql service before initdb.
-  service:
-    name: "{{ postgresql_service_name }}"
-    state: stopped
-    enabled: yes
-  become: yes
+# - name: Stop postgresql service before initdb.
+#   service:
+#     name: "{{ postgresql_service_name }}"
+#     state: stopped
+#     enabled: yes
+#   become: yes
 
-- name: Check if PostgreSQL data directory is initialized
-  stat:
-    path: "{{ postgresql_data_directory }}/PG_VERSION"
-  register: pgdata_dir_initialized
-  become: yes
+# - name: Check if PostgreSQL data directory is initialized
+#   stat:
+#     path: "{{ postgresql_data_directory }}/PG_VERSION"
+#   register: pgdata_dir_initialized
+#   become: yes
 
-- name: Initialize the database
-  command: "{{ postgresql_bin_directory }}/initdb -D {{ postgresql_data_directory }}"
-  become: yes
-  become_user: "{{ postgresql_user }}"
-  when: not pgdata_dir_initialized.stat.exists
+# - name: Initialize the database
+#   command: "{{ postgresql_bin_directory }}/initdb -D {{ postgresql_data_directory }}"
+#   become: yes
+#   become_user: "{{ postgresql_user }}"
+#   when: not pgdata_dir_initialized.stat.exists
   
 # - name: Ensure directory /home/{{ postgresql_user }}/.ansible/tmp exists
 #   file:
@@ -134,7 +134,7 @@
 - name: copy pg_hba.conf template
   template:
     src: pg_hba.conf.j2
-    dest: "{{ postgresql_data_directory }}/pg_hba.conf"
+    dest: "/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf"
     owner: "{{ postgresql_user }}"
     group: "{{ postgresql_group }}"
     mode: 0644
@@ -143,7 +143,7 @@
 
 - name: uncomment postgresql properties
   replace:
-    path: "{{ postgresql_data_directory }}/postgresql.conf"
+    path: "{{ postgresql_conf_file }}"
     regexp: "^#({{ item.key }})"
     replace: '\1'
   with_dict: "{{ postgresql_conf }}"
@@ -151,7 +151,7 @@
 
 - name: update postgresql.conf file
   lineinfile:
-    path: "{{ postgresql_data_directory }}/postgresql.conf"
+    path: "{{ postgresql_conf_file }}"
     line: "{{ item.key }} = {{ item.value }}"
     regexp: "^{{ item.key | replace('.', '\\.') }} ="
   with_dict: "{{ postgresql_conf }}"
