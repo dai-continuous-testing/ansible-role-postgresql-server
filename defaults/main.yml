@@ -38,7 +38,8 @@ postgresql_yum_repository_baseurl: "{{ postgresql_yum_repository_url }}/{{ postg
 postgresql_yum_repository_gpgkey: "{{ postgresql_pgdg_repository_url }}/RPM-GPG-KEY-PGDG-{{ postgresql_version_terse }}"
 
 # APT repo URL
-postgresql_apt_repository_url: "http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg {{ postgresql_version }}"
+postgresql_apt_repository_url: "https://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg {{ postgresql_version }}"
+postgresql_apt_repository_key: "https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc"
 
 # postgres login
 postgresql_user: postgres

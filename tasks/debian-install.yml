@@ -21,10 +21,22 @@
 
 # Step 2: Add PostgreSQL repository
 - name: Add PostgreSQL APT repository
-  apt_repository:
-    repo: "deb {{ postgresql_apt_repository_url }}"
-    state: present
-  become: yes
+  block:
+    - name: Add repo
+      apt_repository:
+        repo: "deb {{ postgresql_apt_repository_url }}"
+        state: present
+      become: yes
+      register: repo.result
+    
+    - name: Extract Repository Name
+      set_fact:
+        repo_name: "{{ repo_result.sources_added | basename }}"
+    
+    - name: Add APT signing key
+      apt_key:
+        url: "{{ postgresql_apt_repository_key }}"
+        keyring: "/etc/apt/trusted.gpg.d/{{ repo_name }}"
 
 # Step 3: Update APT cache
 - name: Update APT cache
