@@ -16,12 +16,13 @@
   - postgresql_bin_directory
   - postgresql_conf
   - postgresql_dependencies
-  - postgresql_service_name
+  - postgresql_apt_repository_url
+
 
 # Step 2: Add PostgreSQL repository
 - name: Add PostgreSQL APT repository
   apt_repository:
-    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+    repo: "deb {{ postgresql_apt_repository_url }}"
     state: present
   become: yes
 
@@ -60,48 +61,54 @@
     path: "{{ postgresql_data_directory }}/PG_VERSION"
   register: pgdata_dir_initialized
   become: yes
+
+- name: Initialize the database
+  command: "{{ postgresql_bin_directory }}/initdb -D {{ postgresql_data_directory }}"
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  when: not pgdata_dir_initialized.stat.exists
   
-- name: Ensure directory /home/{{ postgresql_user }}/.ansible/tmp exists
-  file:
-    path: "/home/{{ postgresql_user }}/.ansible/tmp"
-    state: directory
-    owner: "{{ postgresql_user }}"
-    group: "{{ postgresql_user }}"
-    mode: '0755'
-  become: yes
+# - name: Ensure directory /home/{{ postgresql_user }}/.ansible/tmp exists
+#   file:
+#     path: "/home/{{ postgresql_user }}/.ansible/tmp"
+#     state: directory
+#     owner: "{{ postgresql_user }}"
+#     group: "{{ postgresql_user }}"
+#     mode: '0755'
+#   become: yes
 
-- name: Use shell to find PostgreSQL data directory
-  shell: find /var/lib/pgsql -type d -name data
-  register: shell_find_data_dir
-  become: yes
+# - name: Use shell to find PostgreSQL data directory
+#   shell: find /var/lib/pgsql -type d -name data
+#   register: shell_find_data_dir
+#   become: yes
 
-- debug:
-    var: shell_find_data_dir.stdout_lines
+# - debug:
+#     var: shell_find_data_dir.stdout_lines
 
-- name: Assert data directory is found using shell command
-  assert:
-    that:
-      - shell_find_data_dir.stdout != ""
-    fail_msg: "PostgreSQL data directory not found!"
+# - name: Assert data directory is found using shell command
+#   assert:
+#     that:
+#       - shell_find_data_dir.stdout != ""
+#     fail_msg: "PostgreSQL data directory not found!"
 
-- name: Initialize the PostgreSQL database using inline shell script
-  shell: |
-    set -e # Exit on error
-    # Fetch current permissions
-    original_permissions=$(stat -c "%a" /var/tmp)
-    echo "Original Permissions: $original_permissions"
+# - name: Initialize the PostgreSQL database using inline shell script
+#   shell: |
+#     set -e # Exit on error
+#     # Fetch current permissions
+#     original_permissions=$(stat -c "%a" /var/tmp)
+#     echo "Original Permissions: $original_permissions"
 
-    # Change permissions on /var/tmp
-    chmod 1777 /var/tmp
+#     # Change permissions on /var/tmp
+#     chmod 1777 /var/tmp
 
-    # Make sure we always revert permissions, even if something fails
-    trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
+#     # Make sure we always revert permissions, even if something fails
+#     trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
 
-    # Initialize the PostgreSQL database as postgres user
-    INITDB_PATH="/usr/lib/postgresql/14/bin/initdb"
-    DATA_DIR="{{ shell_find_data_dir.stdout }}"
-    sudo -u postgres $INITDB_PATH -D $DATA_DIR
-  become: yes
+#     # Initialize the PostgreSQL database as postgres user
+#     INITDB_PATH="/usr/lib/postgresql/14/bin/initdb"
+#     DATA_DIR="{{ shell_find_data_dir.stdout }}"
+#     sudo -u postgres $INITDB_PATH -D $DATA_DIR
+#   become: yes
 
 
 
@@ -179,31 +186,30 @@
     enabled: yes
   become: yes
 
-#- name: Update the password of the postgres user
-#  command: psql -U postgres -d postgres -c "alter user postgres with password '{{ postgresql_password }}';"
-#  become: yes
-#  become_user: "{{ postgresql_user }}"
-#  changed_when: no
-#  become: yes
-
-- name: Update the password of the postgres user using inline shell script
-  shell: |
-    set -e # Exit on error
-
-    # Fetch current permissions
-    original_permissions=$(stat -c "%a" /var/tmp)
-    echo "Original Permissions: $original_permissions"
-
-    # Change permissions on /var/tmp
-    chmod 1777 /var/tmp
-
-    # Make sure we always revert permissions, even if something fails
-    trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
-
-    # Update the password of the postgres user
-    sudo -u postgres psql -d postgres -c "alter user postgres with password '{{ postgresql_password }}';"
+- name: Update the password of the postgres user
+  command: psql -U postgres -d postgres -c "alter user postgres with password '{{ postgresql_password }}';"
   become: yes
+  become_user: "{{ postgresql_user }}"
   changed_when: no
+
+# - name: Update the password of the postgres user using inline shell script
+#   shell: |
+#     set -e # Exit on error
+
+#     # Fetch current permissions
+#     original_permissions=$(stat -c "%a" /var/tmp)
+#     echo "Original Permissions: $original_permissions"
+
+#     # Change permissions on /var/tmp
+#     chmod 1777 /var/tmp
+
+#     # Make sure we always revert permissions, even if something fails
+#     trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
+
+#     # Update the password of the postgres user
+#     sudo -u postgres psql -d postgres -c "alter user postgres with password '{{ postgresql_password }}';"
+#   become: yes
+#   changed_when: no
 
 
 # Step 11: Expose Role Output
