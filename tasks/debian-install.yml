@@ -2,21 +2,21 @@
 ---
 
 # Step 1: Validation of Variables
-# - name: assert all vars are set
-#   assert: { that: "{{ item }} != '' " }
-#   with_items:
-#   - postgresql_version
-#   - postgresql_port
-#   - postgresql_user
-#   - postgresql_password
-#   - postgresql_group
-#   - postgresql_service_name
-#   - postgresql_packages
-#   - postgresql_data_directory
-#   - postgresql_bin_directory
-#   - postgresql_conf
-#   - postgresql_dependencies
-#   - postgresql_apt_repository_url
+- name: assert all vars are set
+  assert: { that: "{{ item }} != '' " }
+  with_items:
+  - postgresql_version
+  - postgresql_port
+  - postgresql_user
+  - postgresql_password
+  - postgresql_group
+  - postgresql_service_name
+  - postgresql_packages
+  - postgresql_data_directory
+  - postgresql_bin_directory
+  - postgresql_conf
+  - postgresql_dependencies
+  - postgresql_apt_repository_url
 
 
 # Step 2: Add PostgreSQL repository
@@ -208,6 +208,13 @@
   become: yes
   become_user: "{{ postgresql_user }}"
   changed_when: no
+
+- name: restart service
+  service:
+    name: "{{ postgresql_service_name }}"
+    state: restarted
+    enabled: yes
+  become: yes
 
 # - name: Update the password of the postgres user using inline shell script
 #   shell: |
