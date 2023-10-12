@@ -26,6 +26,7 @@
       apt_repository:
         repo: "deb {{ postgresql_apt_repository_url }}"
         state: present
+        update_cache: no
       become: yes
       register: repo_result
     
