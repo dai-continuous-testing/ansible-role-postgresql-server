@@ -8,7 +8,6 @@ backup_folder: /var/lib/Experitest/postgresql/backup
 postgresql_packages:
   - "postgresql-{{ postgresql_version }}"
   - "postgresql-contrib-{{ postgresql_version }}"
-  - "postgresql-client-{{ postgresql_version }}"
 postgresql_dependencies:
   - python3-psycopg2
   - python3-pycurl
