@@ -5,10 +5,6 @@ postgresql_service_name: "postgresql"
 postgresql_bin_directory: "/usr/lib/postgresql/{{ postgresql_version }}/bin"
 backup_folder: /var/lib/Experitest/postgresql/backup
 
-postgresql_install_directory: "/var/lib/postgresql/{{ postgresql_version }}"
-postgresql_data_directory: "{{ postgresql_install_directory }}/main"
-postgresql_pid_directory: "/run/postgresql"
-
 postgresql_packages:
   - "postgresql-{{ postgresql_version }}"
   - "postgresql-contrib-{{ postgresql_version }}"
@@ -16,6 +12,7 @@ postgresql_packages:
 postgresql_dependencies:
   - python3-psycopg2
   - python3-pycurl
+  - acl
 postgresql_binary:
   - psql
   - pg_dump

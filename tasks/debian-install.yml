@@ -75,7 +75,7 @@
 
 - name: Check if PostgreSQL data directory is initialized
   stat:
-    path: "{{ postgresql_data_directory }}/pg_hba.conf"
+    path: "{{ postgresql_data_directory }}/PG_VERSION"
   register: pgdata_dir_initialized
   become: yes
 

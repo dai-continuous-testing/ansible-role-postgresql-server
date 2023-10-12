@@ -7,10 +7,6 @@ postgresql_bin_directory: "/usr/pgsql-{{postgresql_version}}/bin"
 
 backup_folder: /var/lib/Experitest/postgresql/backup
 
-postgresql_install_directory: "/var/lib/pgsql/{{ postgresql_version }}"
-postgresql_data_directory: "{{ postgresql_install_directory }}/data"
-postgresql_pid_directory: "/var/run/postgresql"
-
 postgresql_packages:
   - "postgresql{{ postgresql_version_terse }}-server"
   - "postgresql{{ postgresql_version_terse }}"

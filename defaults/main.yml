@@ -8,6 +8,10 @@ postgresql_listen_addresses:
   - "*"
 postgresql_max_connections: 1000
 
+postgresql_install_directory: "/var/lib/pgsql/{{ postgresql_version }}"
+postgresql_data_directory: "{{ postgresql_install_directory }}/data"
+postgresql_pid_directory: "/var/run/postgresql"
+
 # pg_hba.conf
 postgresql_pg_hba_conf:
   - {type: local, database: all, user: postgres, address: "", method: peer, comment: "Local root Unix user, passwordless access"}
