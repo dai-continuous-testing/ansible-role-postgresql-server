@@ -27,7 +27,7 @@
         repo: "deb {{ postgresql_apt_repository_url }}"
         state: present
       become: yes
-      register: repo.result
+      register: repo_result
     
     - name: Extract Repository Name
       set_fact:
