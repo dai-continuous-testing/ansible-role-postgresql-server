@@ -93,23 +93,6 @@
   become: yes
   notify: restart postgresql
 
-# Step 8: Stop older PostgreSQL services
-
-- name: check old posgtres services
-  shell: "systemctl list-unit-files --type=service | grep postgresql | grep -v {{ postgresql_service_name }} | awk '{print $1}'"
-  register: old_services
-  become: yes
-  changed_when: no
-
-- name: stop old postgresql services
-  service:
-    name: "{{ item }}"
-    state: stopped
-    enabled: no
-  with_items: "{{ old_services.stdout_lines }}"
-  become: yes
-  when: old_services.stdout_lines | length > 0
-
 # Step 9: Reload PostgreSQL Configuration
 
 - name: Reload all conf files
