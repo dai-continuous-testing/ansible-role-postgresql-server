@@ -41,6 +41,7 @@
   apt:
     name: "{{ postgresql_dependencies }}"
     state: present
+    lock_timeout: 180
   become: yes
 
 # Step 5: Install PostgreSQL
@@ -48,6 +49,7 @@
   apt:
     name: "{{ postgresql_packages }}"
     state: present
+    lock_timeout: 180
   become: yes
 
 - name: copy pg_hba.conf template
