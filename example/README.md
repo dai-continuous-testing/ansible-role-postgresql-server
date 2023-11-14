@@ -1,16 +1,12 @@
 
 # Example usage
 
-to use the example:
-- cd into the example folder
-
-- install dependencies \
+To use the example:
+1. Go to the example folder.
+2. Install the depenendices: 
   *ansible-galaxy install -r requirements.yml*
+3. Run the playbookL *ansible-playbook site.yml -i inventory.ini -k --ask-sudo-pass*
+4. Enter the admin password, then confirm.
 
-- run the playbook \
-  *ansible-playbook site.yml -i inventory.ini -k --ask-sudo-pass*
-
-- put the admin password and confirm
-
-## Known issues
+## Known Issues
 
