@@ -1,12 +1,12 @@
-Experitest - PostgreSQL Server Ansible Role
+Continuous Testing - PostgreSQL Server Ansible Role
 =========
 
-This role will install \ uninstall postgresql server for linux hosts
+This role installs and uninstalls PostgreSQL for Linux hosts.
 
 Requirements
 ------------
 
-This has been tested on Ansible 2.4.0 and higher.
+This is supported for Ansible 2.4.0 and higher.
 
 Compatibility matrix
 --------------
@@ -19,17 +19,17 @@ Compatibility matrix
 Role Variables
 --------------
 
-| Name | Description | Type | Default | Required |
-|------|-------------|:----:|:-----:|:-----:|
-| state | should the application be present or absent | present, absent | present | no |
-| postgresql_version | postgresql version to install (check compatibility matrix) | string | 11 | no |
-| postgresql_password | postgres user password for db connection | string |  | yes |
-| postgresql_port | default postgresql port number | number | 5432 | no |
-| extra_postgresql_conf | additional props to be override in postgresql.conf file | dict | {} | no |
-| postgresql_data_directory | default postgresql data directory path | string | /var/lib/pgsql/postgresql_version/data | no |
-| backup_before_uninstall | should take backup all database before uninstall | boolean | False | no |
+| Name | Description                                                | Type | Default | Required |
+|------|------------------------------------------------------------|:----:|:-----:|:-----:|
+| state | Should the application be present or absent                | present, absent | present | no |
+| postgresql_version | PostgreSQL version to install (check compatibility matrix) | string | 11 | no |
+| postgresql_password | PostgresSQL user password for db connection                | string |  | yes |
+| postgresql_port | Default PostgresSQL port number                            | number | 5432 | no |
+| extra_postgresql_conf | Additional properties to be overriden in postgresql.conf   | dict | {} | no |
+| postgresql_data_directory | Default PostgreSQL data directory path                     | string | /var/lib/pgsql/postgresql_version/data | no |
+| backup_before_uninstall | Back up all databases before uninstall                     | boolean | False | no |
 
 
 Example Playbook
 ----------------
-### [see working example](/example)
+### See the [working example](/example).
