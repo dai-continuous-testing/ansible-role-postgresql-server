@@ -18,6 +18,27 @@
   - postgresql_dependencies
   - postgresql_apt_repository_url
 
+- name: make sure dependencies is installed
+  apt:
+    name: "{{ item }}"
+    state: present
+    lock_timeout: 180
+  become: yes
+  with_items:
+    - rsync
+    - unzip
+    - psmisc
+
+- name: Make sure AppArmor and UFW is not present
+  apt:
+    name: "{{ item }}"
+    state: absent
+    lock_timeout: 180
+  become: yes
+  with_items:
+    - apparmor
+    - ufw
+
 
 # Step 2: Add PostgreSQL repository
 - name: Add PostgreSQL APT repository
