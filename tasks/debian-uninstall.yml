@@ -41,19 +41,12 @@
         owner: "{{ postgresql_user }}"
       become: yes
 
-    - name: run database backup with adjusted /var/tmp permissions
-      shell: |
-        set -e # Exit on error
-        # Fetch current permissions
-        original_permissions=$(stat -c "%a" /var/tmp)
-        echo "Original Permissions: $original_permissions"
-        # Change permissions on /var/tmp
-        chmod 1777 /var/tmp
-        # Make sure we always revert permissions, even if something fails
-        trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
-        # Run the backup as postgres user
-        sudo -u "{{ postgresql_user }}" pg_dumpall > {{ backup_folder }}/{{ ansible_date_time.epoch }}-alldatabases.dump
+    - name: run database backup
+      shell: "pg_dumpall > {{ backup_folder }}/{{ ansible_date_time.epoch }}-alldatabases.dump"
       become: yes
+      become_user: "{{ postgresql_user }}"
+      args:
+        executable: /bin/bash
 
   when: backup_before_uninstall == True
 
@@ -77,7 +70,14 @@
 # Step 6: Remove PostgreSQL Repository
 - name: Remove PostgreSQL APT repository
   apt_repository:
-    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+    repo: "{{ postgresql_apt_repository_url }}"
+    state: absent
+  become: yes
+
+- name: Remove APT signing key
+  apt_key:
+    url: "{{ postgresql_apt_repository_key }}"
+    keyring: "/etc/apt/trusted.gpg.d/postgresql.gpg"
     state: absent
   become: yes
 

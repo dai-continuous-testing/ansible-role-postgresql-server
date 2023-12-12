@@ -1,43 +1,22 @@
-
-- name: Check binary version using inline shell script
-  shell: |
-    set -e # Exit on error
-
-    # Fetch current permissions
-    original_permissions=$(stat -c "%a" /var/tmp)
-    echo "Original Permissions: $original_permissions"
-
-    # Change permissions on /var/tmp
-    chmod 1777 /var/tmp
-
-    # Make sure we always revert permissions, even if something fails
-    trap "echo 'Reverting permissions'; chmod $original_permissions /var/tmp" EXIT
-
-    # Get the PostgreSQL binary version as postgres user
-    version_info=$(sudo -u postgres psql --version)
-    echo $version_info | sed 's/^psql (//' | sed 's/)//' | awk '{print $1, $2}'
-  register: postgresql_binary_version
+- name: Check binary version
+  shell: >
+    psql --version | sed 's/^psql (//' | sed 's/)//' | awk '{print $1, $2}'
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  changed_when: false
   failed_when: postgresql_binary_version.stdout == ""
+  register: postgresql_binary_version
   check_mode: no
 
-- name: Check database version using inline shell script
-  shell: |
-    set -e # Exit on error
-    # Fetch current permissions
-    original_permissions=$(stat -c "%a" /var/tmp)
-    # Change permissions on /var/tmp
-    chmod 1777 /var/tmp
-    # Make sure we always revert permissions, even if something fails
-    trap "chmod $original_permissions /var/tmp" EXIT
-    # Get database version as postgres user
-    DB_VERSION=$(sudo -u postgres psql --quiet --tuples-only --port={{ postgresql_port | int }} --command="select substring(version(),'[^\s]+\s+[^\s]+');")
-    echo $DB_VERSION | sed 's/^ //'
+- name: Check database version
+  shell: >
+    psql --quiet --tuples-only --port={{ postgresql_port | int }} --command="select substring(version(),'[^\s]+\s+[^\s]+');" | sed 's/^ //'
   become: yes
-  register: postgresql_database_version
+  become_user: "{{ postgresql_user }}"
   changed_when: false
   failed_when: postgresql_database_version.stdout == ""
+  register: postgresql_database_version
   check_mode: no
-
 
 - name: Verify binary and database versions match
   debug:
