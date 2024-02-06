@@ -35,7 +35,7 @@ postgresql_conf: "{{ base_postgresql_conf | combine(extra_postgresql_conf) }}"
 postgresql_yum_repository_url: "http://yum.postgresql.org"
 postgresql_pgdg_repository_url: "https://download.postgresql.org/pub/repos/yum/"
 postgresql_yum_repository_baseurl: "{{ postgresql_yum_repository_url }}/{{ postgresql_version }}/{{ ansible_os_family | lower }}/rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
-postgresql_yum_repository_gpgkey: "{{ postgresql_pgdg_repository_url }}/RPM-GPG-KEY-PGDG-{{ postgresql_version_terse }}"
+postgresql_yum_repository_gpgkey: "{{ postgresql_pgdg_repository_url }}/keys/RPM-GPG-KEY-PGDG-{{ postgresql_version_terse }}"
 
 # APT repo URL
 postgresql_apt_repository_url: "https://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg {{ postgresql_version }}"
