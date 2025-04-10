@@ -3,8 +3,12 @@
 
 # Step 1: Validation of Variables
 - name: assert all vars are set
-  assert: { that: "{{ item }} != '' " }
-  with_items:
+  assert: 
+    that:
+      - item is defined
+      - item | length > 0
+    quiet: true
+  loop:
   - postgresql_service_name
   - postgresql_install_directory
   - backup_folder
